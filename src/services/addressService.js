@@ -1,0 +1,95 @@
+import Address from "../models/addressModel.js";
+
+
+
+export const createAddress = async (userId, data) => {
+    // Check for duplicate phone number per user
+    const existingPhone = await Address.findOne({ user: userId, phoneNumber: data.phoneNumber });
+    if (existingPhone) {
+        throw new Error("You already have an address with this phone number.");
+    }
+
+    if (data.isDefault) {
+        await Address.updateMany(
+            { user: userId },
+            { $set: { isDefault: false } }
+        );
+    }
+
+    const address = await Address.create({
+        ...data,
+        user: userId
+    });
+
+    return address;
+};
+
+export const getUserAddresses = async(userId)=>{
+
+return await Address.find({
+user:userId,
+isActive:true
+}).sort({isDefault:-1});
+
+};
+
+export const getAddressById = async(id, userId) => {
+    const address = await Address.findOne({
+        _id: id,
+        user: userId,
+        isActive: true
+    });
+
+    if (!address) {
+        throw new Error("Address not found");
+    }
+
+    return address;
+};
+
+export const updateAddress = async(id, userId, data) => {
+    const address = await Address.findOne({
+        _id: id,
+        user: userId
+    });
+
+    if (!address) {
+        throw new Error("Address not found");
+    }
+
+    // Only update others if this address is not already default and is being set as default
+    if (data.isDefault && !address.isDefault) {
+        await Address.updateMany(
+            { user: userId },
+            { $set: { isDefault: false } }
+        );
+    }
+
+    Object.assign(address, data);
+    await address.save();
+    return address;
+};
+
+export const deleteAddress = async(id, userId) => {
+    const address = await Address.findOneAndDelete({ _id: id, user: userId });
+    if (!address) {
+        throw new Error("Address not found");
+    }
+    return address;
+};
+
+export const setDefaultAddress = async(id, userId) => {
+    const address = await Address.findOne({ _id: id, user: userId });
+    if (!address) {
+        throw new Error("Address not found");
+    }
+
+    await Address.updateMany(
+        { user: userId },
+        { $set: { isDefault: false } }
+    );
+
+    address.isDefault = true;
+    await address.save();
+    return address;
+};
