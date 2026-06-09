@@ -27,34 +27,35 @@ describe('addressService', () => {
       phoneNumber: '9876543210',
       addressLine1: '123 Main St',
       city: 'Mumbai',
-      state: 'Maharashtra',
       pincode: '400001',
     };
 
+    const expectedCreatePayload = (overrides = {}) => ({
+      fullName: data.fullName,
+      phoneNumber: data.phoneNumber,
+      addressLine1: data.addressLine1,
+      city: data.city,
+      pincode: data.pincode,
+      email: data.email,
+      user: userId,
+      ...overrides,
+    });
+
     it('creates address when no duplicate phone', async () => {
       mockAddress.findOne.mockResolvedValue(null);
-      const created = { _id: 'addr1', ...data, user: userId, isDefault: false };
+      const created = { _id: 'addr1', ...expectedCreatePayload() };
       mockAddress.create.mockResolvedValue(created);
 
-      const result = await addressService.createAddress(userId, data);
+      const result = await addressService.createAddress(userId, data.email, data);
 
-      expect(mockAddress.findOne).toHaveBeenCalledWith({ user: userId, phoneNumber: data.phoneNumber });
-      expect(mockAddress.create).toHaveBeenCalledWith({ ...data, user: userId });
+      expect(mockAddress.create).toHaveBeenCalledWith(expectedCreatePayload());
       expect(result).toEqual(created);
     });
 
-    it('throws when duplicate phone exists', async () => {
-      mockAddress.findOne.mockResolvedValue({ _id: 'existing', phoneNumber: '9876543210' });
-
-      await expect(addressService.createAddress(userId, data)).rejects.toThrow('already have an address with this phone number');
-      expect(mockAddress.create).not.toHaveBeenCalled();
-    });
-
     it('unmarks other defaults when isDefault is true', async () => {
-      mockAddress.findOne.mockResolvedValue(null);
-      mockAddress.create.mockResolvedValue({ _id: 'addr2', ...data, user: userId, isDefault: true });
+      mockAddress.create.mockResolvedValue({ _id: 'addr2', ...expectedCreatePayload({ isDefault: true }) });
 
-      await addressService.createAddress(userId, { ...data, isDefault: true });
+      await addressService.createAddress(userId, data.email, { ...data, isDefault: true });
 
       expect(mockAddress.updateMany).toHaveBeenCalledWith(
         { user: userId },
@@ -64,9 +65,9 @@ describe('addressService', () => {
 
     it('does not unmark defaults when isDefault is false', async () => {
       mockAddress.findOne.mockResolvedValue(null);
-      mockAddress.create.mockResolvedValue({ _id: 'addr3', ...data, user: userId, isDefault: false });
+      mockAddress.create.mockResolvedValue({ _id: 'addr3', ...expectedCreatePayload({ isDefault: false }) });
 
-      await addressService.createAddress(userId, { ...data, isDefault: false });
+      await addressService.createAddress(userId, data.email, { ...data, isDefault: false });
 
       expect(mockAddress.updateMany).not.toHaveBeenCalled();
     });

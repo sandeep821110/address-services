@@ -19,7 +19,7 @@ describe('addressController', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     req = {
-      user: { id: 'user1' },
+      user: { id: 'user1', email: 'test@example.com' },
       params: {},
       body: {},
     };
@@ -37,7 +37,7 @@ describe('addressController', () => {
 
       await addressController.createAddress(req, res);
 
-      expect(mockAddressService.createAddress).toHaveBeenCalledWith('user1', req.body);
+      expect(mockAddressService.createAddress).toHaveBeenCalledWith('user1', 'test@example.com', req.body);
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({ success: true, address });
     });

@@ -1,25 +1,12 @@
 import * as addressService from "../services/addressService.js";
 
 export const createAddress = async(req,res)=>{
-
-try{
-
-const address = await addressService.createAddress(
-req.user.id,
-req.body
-);
-
-res.status(201).json({
-success:true,
-address
-});
-
-}catch(error){
-
-res.status(400).json({success:false,message:error.message});
-
-}
-
+  try{
+    const address = await addressService.createAddress(req.user.id, req.user.email, req.body);
+    res.status(201).json({ success:true, address });
+  }catch(error){
+    res.status(400).json({success:false,message:error.message});
+  }
 };
 
 export const getAddresses = async(req,res)=>{

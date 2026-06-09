@@ -2,13 +2,7 @@ import Address from "../models/addressModel.js";
 
 
 
-export const createAddress = async (userId, data) => {
-    // Check for duplicate phone number per user
-    const existingPhone = await Address.findOne({ user: userId, phoneNumber: data.phoneNumber });
-    if (existingPhone) {
-        throw new Error("You already have an address with this phone number.");
-    }
-
+export const createAddress = async (userId, email, data) => {
     if (data.isDefault) {
         await Address.updateMany(
             { user: userId },
@@ -16,8 +10,11 @@ export const createAddress = async (userId, data) => {
         );
     }
 
+    const { email: _, addressLine2, state, ...rest } = data;
+
     const address = await Address.create({
-        ...data,
+        ...rest,
+        email,
         user: userId
     });
 
