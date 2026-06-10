@@ -10,7 +10,7 @@ export const createAddress = async (userId, email, data) => {
         );
     }
 
-    const { email: _, addressLine2, state, ...rest } = data;
+    const { email: _, addressLine2, ...rest } = data;
 
     const address = await Address.create({
         ...rest,

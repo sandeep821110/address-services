@@ -52,8 +52,8 @@ message:"Please enter valid phone number"
 
   state:{
     type:String,
-    required:true,
-    trim:true
+    trim:true,
+    default:""
   },
 
 pincode:{
