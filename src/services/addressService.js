@@ -1,19 +1,36 @@
 import Address from "../models/addressModel.js";
 
+const ALLOWED_FIELDS = [
+    "fullName",
+    "phoneNumber",
+    "addressLine1",
+    "city",
+    "state",
+    "pincode",
+    "landmark",
+    "isDefault",
+];
 
+const pickAddressFields = (data) => {
+    const result = {};
+    for (const key of ALLOWED_FIELDS) {
+        if (data[key] !== undefined) result[key] = data[key];
+    }
+    return result;
+};
 
 export const createAddress = async (userId, email, data) => {
-    if (data.isDefault) {
+    const fields = pickAddressFields(data);
+
+    if (fields.isDefault) {
         await Address.updateMany(
             { user: userId },
             { $set: { isDefault: false } }
         );
     }
 
-    const { email: _, addressLine2, ...rest } = data;
-
     const address = await Address.create({
-        ...rest,
+        ...fields,
         email,
         user: userId
     });
@@ -55,14 +72,16 @@ export const updateAddress = async(id, userId, data) => {
     }
 
     // Only update others if this address is not already default and is being set as default
-    if (data.isDefault && !address.isDefault) {
+    const fields = pickAddressFields(data);
+
+    if (fields.isDefault && !address.isDefault) {
         await Address.updateMany(
             { user: userId },
             { $set: { isDefault: false } }
         );
     }
 
-    Object.assign(address, data);
+    Object.assign(address, fields);
     await address.save();
     return address;
 };

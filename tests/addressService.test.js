@@ -71,6 +71,30 @@ describe('addressService', () => {
 
       expect(mockAddress.updateMany).not.toHaveBeenCalled();
     });
+
+    it('strips ownership, email and non-whitelisted fields', async () => {
+      mockAddress.findOne.mockResolvedValue(null);
+      mockAddress.create.mockResolvedValue({ _id: 'addr4' });
+
+      await addressService.createAddress(userId, data.email, {
+        ...data,
+        user: 'victim-user',
+        isActive: false,
+        email: 'attacker@example.com',
+        _id: 'forged-id',
+        evilField: 'x',
+      });
+
+      expect(mockAddress.create).toHaveBeenCalledWith({
+        fullName: data.fullName,
+        phoneNumber: data.phoneNumber,
+        addressLine1: data.addressLine1,
+        city: data.city,
+        pincode: data.pincode,
+        email: data.email,
+        user: userId,
+      });
+    });
   });
 
   describe('getUserAddresses', () => {
@@ -149,6 +173,24 @@ describe('addressService', () => {
       mockAddress.findOne.mockResolvedValue(null);
 
       await expect(addressService.updateAddress('nonexistent', 'user1', {})).rejects.toThrow('Address not found');
+    });
+
+    it('cannot change ownership or active flag via update payload', async () => {
+      const address = { _id: 'addr1', user: 'user1', fullName: 'Old', isDefault: false, isActive: true, save: jest.fn() };
+      mockAddress.findOne.mockResolvedValue(address);
+
+      await addressService.updateAddress('addr1', 'user1', {
+        user: 'victim-user',
+        isActive: false,
+        email: 'attacker@example.com',
+        fullName: 'New Name',
+      });
+
+      expect(address.user).toBe('user1');
+      expect(address.isActive).toBe(true);
+      expect(address.email).toBeUndefined();
+      expect(address.fullName).toBe('New Name');
+      expect(address.save).toHaveBeenCalled();
     });
   });
 

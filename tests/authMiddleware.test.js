@@ -7,6 +7,8 @@ jest.unstable_mockModule('axios', () => ({
   default: { post: mockAxiosPost }
 }));
 
+const SIGN_SECRET = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
+
 const authMiddleware = (await import('../src/middleware/authMiddleware.js')).default;
 
 describe('authMiddleware', () => {
@@ -21,7 +23,7 @@ describe('authMiddleware', () => {
 
   describe('token from Authorization header', () => {
     it('authenticates with valid HS256 token', async () => {
-      const token = jwt.sign({ id: 'user1', role: 'user' }, process.env.JWT_SECRET, { algorithm: 'HS256' });
+      const token = jwt.sign({ id: 'user1', role: 'user' }, SIGN_SECRET, { algorithm: 'HS256' });
       req.headers.authorization = `Bearer ${token}`;
 
       await authMiddleware(req, res, next);
@@ -67,7 +69,7 @@ describe('authMiddleware', () => {
 
   describe('token from cookies', () => {
     it('authenticates with valid token from accessToken cookie', async () => {
-      const token = jwt.sign({ id: 'cookieUser' }, process.env.JWT_SECRET, { algorithm: 'HS256' });
+      const token = jwt.sign({ id: 'cookieUser' }, SIGN_SECRET, { algorithm: 'HS256' });
       req.cookies.accessToken = token;
 
       await authMiddleware(req, res, next);
@@ -77,7 +79,7 @@ describe('authMiddleware', () => {
     });
 
     it('sets req.refreshToken when refreshToken cookie is present', async () => {
-      const token = jwt.sign({ id: 'u1' }, process.env.JWT_SECRET, { algorithm: 'HS256' });
+      const token = jwt.sign({ id: 'u1' }, SIGN_SECRET, { algorithm: 'HS256' });
       req.cookies.accessToken = token;
       req.cookies.refreshToken = 'my-refresh-token-value';
 
@@ -88,7 +90,7 @@ describe('authMiddleware', () => {
     });
 
     it('does not set req.refreshToken when no refreshToken cookie', async () => {
-      const token = jwt.sign({ id: 'u1' }, process.env.JWT_SECRET, { algorithm: 'HS256' });
+      const token = jwt.sign({ id: 'u1' }, SIGN_SECRET, { algorithm: 'HS256' });
       req.cookies.accessToken = token;
 
       await authMiddleware(req, res, next);
@@ -98,8 +100,8 @@ describe('authMiddleware', () => {
     });
 
     it('prefers Authorization header over accessToken cookie when both present', async () => {
-      const headerToken = jwt.sign({ id: 'fromHeader' }, process.env.JWT_SECRET, { algorithm: 'HS256' });
-      const cookieToken = jwt.sign({ id: 'fromCookie' }, process.env.JWT_SECRET, { algorithm: 'HS256' });
+      const headerToken = jwt.sign({ id: 'fromHeader' }, SIGN_SECRET, { algorithm: 'HS256' });
+      const cookieToken = jwt.sign({ id: 'fromCookie' }, SIGN_SECRET, { algorithm: 'HS256' });
       req.headers.authorization = `Bearer ${headerToken}`;
       req.cookies.accessToken = cookieToken;
 

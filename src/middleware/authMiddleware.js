@@ -6,12 +6,16 @@ const getAccessSecret = () => process.env.JWT_ACCESS_SECRET || process.env.JWT_S
 const extractToken = (req) => {
   const auth = req.headers.authorization;
   if (auth && auth.startsWith("Bearer ")) return auth.split(" ")[1];
+  if (req.cookies?.accessToken) return req.cookies.accessToken;
   if (req.cookies?.authToken) return req.cookies.authToken;
   return null;
 };
 
 const verifyLocally = (token) => {
   try {
+    if (process.env.JWT_ALGORITHM === "RS256" && process.env.JWT_PUBLIC_KEY) {
+      return jwt.verify(token, process.env.JWT_PUBLIC_KEY, { algorithms: ["RS256"] });
+    }
     return jwt.verify(token, getAccessSecret());
   } catch {
     return null;
@@ -72,6 +76,10 @@ const authMiddleware = async (req, res, next) => {
       email: decoded.email || null,
       role: decoded.role || "user",
     };
+
+    if (req.cookies?.refreshToken) {
+      req.refreshToken = req.cookies.refreshToken;
+    }
 
     next();
   } catch (error) {
